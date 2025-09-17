@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tour Guide</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="sidebar-open">
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>AI Tour Guide</h1>
+            </div>
+            
+            <div class="nav-controls">
+                <div class="control-group">
+                    <label for="state-select">State</label>
+                    <select id="state-select"></select>
+                </div>
+                <div class="control-group">
+                    <label for="city-select">City</label>
+                    <select id="city-select"></select>
+                </div>
+                <div class="control-group">
+                    <label for="days-input">Days</label>
+                    <input type="number" id="days-input" value="3" min="1" max="14">
+                </div>
+                <div class="control-group">
+                    <label for="style-select">Style</label>
+                    <select id="style-select">
+                        <option value="cultural">Cultural</option>
+                        <option value="historical">Historical</option>
+                        <option value="family">Family</option>
+                        <option value="adventure">Adventure</option>
+                        <option value="romantic">Romantic</option>
+                        <option value="spiritual">Spiritual</option>
+                        <option value="relaxation">Relaxation</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="start-time-input">Start Time</label>
+                    <input type="text" id="start-time-input" value="09:00" placeholder="e.g., 09:00">
+                </div>
+                
+                <div class="control-group search-container">
+                    <div class="search-dropdown">
+                        <button id="search-btn" class="search-button">
+                            <i class="fas fa-search"></i> Search Places
+                        </button>
+                        <div id="search-dropdown-content" class="search-dropdown-content">
+                            <input type="text" id="search-input" placeholder="Search for places...">
+                            <div id="search-results" class="search-results"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <button id="custom-planner-btn" class="custom-planner-button">
+                        <i class="fas fa-plus-circle"></i> Custom Planner
+                    </button>
+                </div>
+            </div>
+            
+            <div class="nav-actions">
+                <div class="theme-switcher">
+                    <span>Light</span>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span>Dark</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content">
+        <div id="loader" class="loader-container">
+             <div class="spinner"></div>
+             <p>✨ Your itinerary is being crafted...</p>
+        </div>
+
+        <div id="main-content-wrapper" class="hidden">
+            <div class="itinerary-column">
+                <header class="content-header">
+                    <h1 id="itinerary-title">Trip Itinerary</h1>
+                    <div class="day-selector-wrapper">
+                        <label for="day-select">Select Day:</label>
+                        <select id="day-select"></select>
+                    </div>
+                </header>
+                <div id="itinerary-container">
+                    <div class="placeholder">
+                        Your itinerary will appear here. Try changing the options in the top bar!
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-column">
+                <header class="content-header">
+                    <h2>Map & Utilities</h2>
+                </header>
+                <div id="map"></div>
+                <div class="utilities">
+                    <a id="gmaps-link" href="#" target="_blank" class="gmaps-button">
+                        <i class="fas fa-map-marked-alt"></i> Open Route in Google Maps
+                    </a>
+                    <div class="action-buttons">
+                        <button id="share-btn">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                        <button id="export-pdf">
+                            <i class="fas fa-file-pdf"></i> Download PDF
+                        </button>
+                    </div>
+                    <div id="copy-feedback" class="copy-feedback">Copied to clipboard!</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Planner Modal -->
+    <div id="custom-planner-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create Custom Itinerary</h2>
+            <div class="custom-planner-form">
+                <div class="form-group">
+                    <label for="custom-place-name">Place Name</label>
+                    <input type="text" id="custom-place-name" placeholder="Enter place name">
+                </div>
+                <div class="form-group">
+                    <label for="custom-place-lat">Latitude</label>
+                    <input type="number" id="custom-place-lat" placeholder="e.g., 22.5726" step="any">
+                </div>
+                <div class="form-group">
+                    <label for="custom-place-lon">Longitude</label>
+                    <input type="number" id="custom-place-lon" placeholder="e.g., 88.3639" step="any">
+                </div>
+                <div class="form-group">
+                    <label for="custom-place-duration">Duration (hours)</label>
+                    <input type="number" id="custom-place-duration" value="1" min="0.5" max="10" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label for="custom-place-tags">Tags (comma separated)</label>
+                    <input type="text" id="custom-place-tags" placeholder="e.g., cultural, historical">
+                </div>
+                <div class="form-group">
+                    <label for="custom-place-description">Description</label>
+                    <textarea id="custom-place-description" rows="3" placeholder="Enter a brief description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="custom-place-day">Day</label>
+                    <select id="custom-place-day"></select>
+                </div>
+                <div class="form-actions">
+                    <button id="add-custom-place" class="btn-primary">Add to Itinerary</button>
+                    <button id="clear-custom-form" class="btn-secondary">Clear Form</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
